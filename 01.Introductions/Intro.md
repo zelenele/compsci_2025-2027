@@ -23,4 +23,8 @@ From there on, we'll move onto A3 (Databases), which will closely relate to the 
 
 These topics, with the Internal Assessment project, will take up most of your first year. If there seems to be a need for more time on any of these subjects, we can adjust the schedule accordingly to ensure everyone is comfortable with the material before moving on.
 
-In the second year, we'll cover A1 (Computer Fundamentals) to learn more about the inner workings of the computer systems and how software interacts with hardware. After that, we'll go into A2 (Networks) to understand how computers communicate with each other and the internet. Finally, we'll wrap up with A4 (Machine Learning) to explore the exciting field of AI and its applications.
+In the second year, we'll cover A1 (Computer Fundamentals) to learn more about the inner workings of the computer systems and how software interacts with hardware. After that, we'll go into A2 (Networks) to understand how computers communicate with each other and the internet. Finally, we'll wrap up with A4 (Machine Learning) to learn how to implement modern machine learning techniques and discuss the ethics of AI.
+
+## Resources
+
+Resources will be made available on Google Classroom, Managebac and also in Github Classroom(if I can set it up properly). I will also try to keep this document up to date, but it may not always reflect the most current information. If you see something missing, feel free to create an issue on the repository.
