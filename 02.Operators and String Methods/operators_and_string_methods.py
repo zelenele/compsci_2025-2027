@@ -76,7 +76,7 @@ messy_name = "  bungee J. UMPERTON   "
 print(messy_name)
 
 #TODO: Remove spaces and fix capitalization
-clean_name = messy_name
+clean_name = None
 print(clean_name)
 
 # String information
