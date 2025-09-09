@@ -127,8 +127,8 @@ math = 85
 science = 92
 english = 78
 
-# Calculate average
-average = (math + science + english) / 3
+#TODO: Calculate average
+average = 
 formatted_student = student.title()
 
 print(formatted_student)
