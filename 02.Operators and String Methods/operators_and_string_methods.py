@@ -10,23 +10,23 @@ addition = num1 + num2
 print(addition)
 
 # TODO: Calculate subtraction
-subtraction = 
+subtraction = None
 print(subtraction)
 
-# TODO: Calculate multiplication  
-multiplication = 
+# TODO: Calculate multiplication
+multiplication = None
 print(multiplication)
 
 # TODO: Calculate division
-division = 
+division = None
 print(division)
 
 # TODO: Calculate floor division
-floor_division = 
+floor_division = None
 print(floor_division)
 
 # TODO: Calculate modulus (remainder)
-modulus = 
+modulus = None
 print(modulus)
 
 # Order of operations - what will be printed?
@@ -45,11 +45,11 @@ print(your_age == friend_age)  # Same age?
 print(your_age < friend_age)   # Are you younger?
 
 # TODO: Check if you are at least 16
-at_least_16 = 
+at_least_16 = None
 print(at_least_16)
 
 # TODO: Check if your friend is not 18
-friend_not_18 = 
+friend_not_18 = None
 print(friend_not_18)
 
 # LOGICAL OPERATORS
@@ -63,11 +63,11 @@ can_go_beach = temperature > 20 and not is_raining
 print(can_go_beach)
 
 # TODO: Should study inside if raining OR it's a weekday
-should_study = 
+should_study = None
 print(should_study)
 
 # TODO: Wear jacket if cold OR raining
-wear_jacket = 
+wear_jacket = None
 print(wear_jacket)
 
 # STRING METHODS - BASIC
@@ -75,8 +75,8 @@ print(wear_jacket)
 messy_name = "  bungee J. UMPERTON   "
 print(messy_name)
 
-# Remove spaces and fix capitalization
-clean_name = messy_name.strip().title()
+#TODO: Remove spaces and fix capitalization
+clean_name = messy_name
 print(clean_name)
 
 # String information
@@ -86,15 +86,15 @@ print(sentence.upper())     # Uppercase
 print(sentence.lower())     # Lowercase
 
 # TODO: Count how many 'a' letters
-count_a = 
+count_a = None
 print(count_a)
 
 # TODO: Check if starts with 'Python'
-starts_python = 
+starts_python = None
 print(starts_python)
 
 # TODO: Check if ends with '!'
-ends_exclamation = 
+ends_exclamation = None
 print(ends_exclamation)
 
 # STRING METHODS - REPLACING
@@ -128,25 +128,27 @@ science = 92
 english = 78
 
 #TODO: Calculate average
-average = 
-formatted_student = student.title()
+average = None
+
+#TODO: Format student name
+formatted_student = None
 
 print(formatted_student)
 print(average)
 
 # TODO: Check if student passed (average >= 80)
-passed = 
+passed = None
 print(passed)
 
 # String validation
 test_string = "12345"
 
 # TODO: Check if all digits
-all_digits = 
+all_digits = None
 print(all_digits)
 
 # TODO: Check if contains letters
-has_letters = 
+has_letters = None
 print(has_letters)
 
 # CHALLENGE: Text analysis
@@ -158,4 +160,4 @@ char_count = len(text)
 print(word_count)
 print(char_count)
 
-# Write your guesses as comments, then run and check 
+# Write your guesses as comments, then run and check
