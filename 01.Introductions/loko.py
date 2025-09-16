@@ -1,0 +1,6 @@
+broker = input("Enter broker name: ")
+print("hello", broker)
+print(broker.count("l"))
+print(broker.rfind("o"))    
+print(broker.startswith("A"))
+print(broker.endswith("k"))
