@@ -5,7 +5,7 @@ def membership_discount(price):
      return membership_discount_value
 
 def Membership_card(Membershipp_card):
-     if Membershipp566565_card == True:
+     if Membership_card(Membershipp_card) == True:
           return True
      else:
           return False
