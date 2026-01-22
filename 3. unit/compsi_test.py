@@ -16,8 +16,8 @@ while True:
     if decision == "1":
         name_song = input("what is the name of the song ")
         date_song = input("what is the date ")
-        The_playlist.append(name_song)
-        The_playlist.append(date_song)
+        The_playlist.append((name_song,date_song))
+    
         print(f"Your song:{name_song} has benen added to the queue")
         print(The_playlist)
     # asking about the name and date of the song seperatly and storing them into a list as two seperate strings
@@ -26,8 +26,6 @@ while True:
         if not The_playlist:
             print("no song in queue")
         else:
-            to_history = The_playlist.pop(0)
-            Music_history.append(to_history)
             to_history = The_playlist.pop(0)
             Music_history.append(to_history)
     
@@ -39,7 +37,7 @@ while True:
         if not Music_history:
             print("Nothing is playing")
         else:
-            print(f"your hit is from the year {Music_history[1]}")
+            print(f"your hit is from the year {Music_history[-1][1]}")
 
     # Checking from what year the song is from, it is always the second value in a stack
 
@@ -49,8 +47,7 @@ while True:
         else :
             to_playlist = Music_history.pop(1)
             The_playlist.insert(0, to_playlist)
-            to_playlist = Music_history.pop(0)
-            The_playlist.insert(0, to_playlist)
+            
    # Used the sam logic as in the 2 point
     elif decision == "5":
         print("Thank you for using our services")
