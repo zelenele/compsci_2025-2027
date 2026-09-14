@@ -1,16 +1,24 @@
-class Transaction:
-    def __init__(self, Amount, Time, Service):
-        self.Amount = Amount
-        self.Time = Time
-        self.Service = Service
-    
-    def Summing(self):
-        return {self.Amount, self.Time, self.Service}
-class Expense(Transaction):
-    transaction_type = "expense"
+import sqlite3
+import os 
+sqlitedata = sqlite3.connect(
+        "Project_database.db"
+)
 
-class Earning(Transaction):
-    transaction_type = "earning"
+sqlitedata.execute(""" \
+CREATE TABLE IF NOT EXISTS Expenses (
+        expense_id INT, 
+        category STR,
+        Amount REAL,
+        Item STR,
+        Date DATE
+)
+""")
 
+tables = sqlitedata.execute("""
+    SELECT name FROM sqlite_master
+    WHERE type='table'
+""")
 
-Class 
+print(tables.fetchall())
+
+sqlitedata.close()
