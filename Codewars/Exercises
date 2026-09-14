@@ -1,0 +1,13 @@
+import math 
+def bmi(weight, height):
+    new_height = height * height
+    bmi_calculated = weight/ new_height
+    if bmi_calculated <= 18:
+        print("Underweight")
+    elif bmi_calculated <= 25:
+        print("Normal")
+    elif bmi_calculated <= 30:
+        print("Obese")
+    elif bmi_calculated > 30:
+        print("Overweight")
+print(bmi(74,2))

@@ -1,0 +1,4 @@
+def add_letters(*letters):
+    for letter in letters:
+        wynik =  print(ord(letter)-96)
+        sum = sum += wynik

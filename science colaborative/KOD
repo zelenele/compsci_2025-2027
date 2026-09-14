@@ -1,0 +1,667 @@
+"""Group C:  CustomTkinter interface for the carbon calculator.
+ 
+Shared unit: kg CO2e per person per year.
+The GUI collects user answers, calculates five domain scores, and shows the
+strongest and weakest domain.
+"""
+
+import customtkinter as ctk
+import datetime as datetime 
+
+ 
+ 
+domain_keys = [
+    "transport",
+    "diet",
+    "waste",
+    "appliances",
+    "textiles",
+]
+ 
+domain_names = [
+    "Transport",
+    "Diet",
+    "Waste",
+    "Appliances",
+    "Textile/ConsumerElectronics",
+]
+ 
+community_averages = [4500, 1500, 375, 445, 440]
+ 
+feedback = [
+    [
+        "Your travel choices are reducing emissions. Great work!",
+        "Replace short trips, use public transport, and reduce flights when possible.",
+    ],
+    [
+        "Your food footprint is lower than average. Keep it up!",
+        "Try more plant-based meals and reduce food waste.",
+    ],
+    [
+        "Your waste result is better than average. Keep sorting and reusing!",
+        "Prevent waste first, then reuse, compost, and recycle correctly.",
+    ],
+    [
+        "Your home energy result is a strength. Keep using energy efficiently!",
+        "Switch off unused appliances and reduce standby power.",
+    ],
+    [
+        "Your clothing and electronics score is low. Well done!",
+        "Buy fewer new items, choose second-hand clothes, and keep electronics longer.",
+    ],
+]
+ 
+meat_options = {
+    "1 - Beef": "beef",
+    "2 - Seafood": "seafood",
+    "3 - Pork": "pork",
+    "4 - Poultry": "poultry",
+    "5 - No meat": "no_meat",
+}
+ 
+meat_factors = {
+    "beef": 5.0,
+    "seafood": 1.3,
+    "pork": 2.0,
+    "poultry": 1.5,
+    "no_meat": 0.0,
+}
+ 
+clothing_options = {
+    "Fast fashion": 12.5,
+    "Mid-range brands": 13.0,
+    "Sustainable / eco-friendly": 8.0,
+    "Second-hand clothing": 2.0,
+}
+ 
+question_groups = [
+    [
+        "Diet",
+        [
+            ["meat_times_2_weeks", "How many times do you eat meat in 2 weeks?"],
+            [
+                "dairy_times_2_weeks",
+                "How many times do you consume dairy products in 2 weeks?",
+            ],
+            [
+                "expired_food_times_week",
+                "How many times per week do you throw out expired food or ingredients?",
+            ],
+        ],
+    ],
+    [
+        "Transport & air travel",
+        [["flight_hours_year", "How many hours do you travel by plane per year?"]],
+    ],
+    [
+        "Housing & appliances",
+        [
+            [
+                "large_appliances",
+                "How many large appliances do you use at home?",
+            ],
+            ["standby_devices", "How many devices stay on standby at home?"],
+        ],
+    ],
+    [
+        "Textiles & computers",
+        [
+            [
+                "textile_pieces_year",
+                "How many new clothes/textile pieces do you buy per year?",
+            ],
+            ["electronics_year", "How many new electronic devices do you buy per year?"],
+            ["device_hours_day", "How many hours per day do you use digital devices?"],
+        ],
+    ],
+    [
+        "Waste & recycling",
+        [
+            [
+                "trash_bags_50l_week",
+                "How many 50 L trash bags does your household produce per week?",
+            ],
+            ["recycling_times_week", "How many times per week do you recycle/sort waste?"],
+        ],
+    ],
+]
+ 
+entries = {}
+question_text = {}
+name_entry = None
+meat_menu = None
+clothing_menu = None
+error_label = None
+score_label = None
+total_label = None
+comparison_label = None
+strongest_label = None
+weakest_label = None
+window = None
+results = None
+date_label= None
+survey_history = []
+# --- Animation engine -------------------------------------------------------
+# Following Emil Kowalski's motion principles: entrances ease out, durations are
+# short and snappy, related elements are revealed with a small stagger, and the
+# motion is purposeful (number count-ups, gentle fade-ins) rather than decorative.
+ 
+FRAME_MS = 16  # ~60 fps
+animation_jobs = []
+original_text_colors = {}
+ 
+ 
+def ease_out_cubic(t):
+    """Decelerating curve: fast start, soft landing (Emil's default for entrances)."""
+    return 1 - (1 - t) ** 3
+ 
+ 
+def _pick_color(color):
+    if isinstance(color, (list, tuple)):
+        index = 0 if ctk.get_appearance_mode() == "Light" else 1
+        return color[index]
+    return color
+ 
+ 
+def _to_rgb(widget, color):
+    r, g, b = widget.winfo_rgb(_pick_color(color))
+    return (r / 257, g / 257, b / 257)  # 16-bit channels -> 0..255
+ 
+ 
+def _to_hex(r, g, b):
+    return f"#{int(round(r)):02x}{int(round(g)):02x}{int(round(b)):02x}"
+ 
+ 
+def cancel_animations():
+    for job in animation_jobs:
+        try:
+            window.after_cancel(job)
+        except Exception:
+            pass
+    animation_jobs.clear()
+ 
+ 
+def _animate(duration, on_frame, on_done=None):
+    steps = max(1, int(duration / FRAME_MS))
+ 
+    def step(i):
+        progress = ease_out_cubic(min(i / steps, 1.0))
+        on_frame(progress)
+        if i < steps:
+            animation_jobs.append(window.after(FRAME_MS, lambda: step(i + 1)))
+        elif on_done is not None:
+            on_done()
+ 
+    step(0)
+ 
+ 
+def _schedule(delay, fn):
+    if delay > 0:
+        animation_jobs.append(window.after(delay, fn))
+    else:
+        fn()
+ 
+ 
+def count_up(label, prefix, end, suffix, duration=650, delay=0):
+    """Tween a number from 0 to its final value for a satisfying reveal."""
+    def run():
+        _animate(
+            duration,
+            lambda p: label.configure(text=f"{prefix}{int(round(end * p))}{suffix}"),
+            on_done=lambda: label.configure(text=f"{prefix}{end}{suffix}"),
+        )
+ 
+    _schedule(delay, run)
+ 
+ 
+def fade_in(label, bg_color, duration=320, delay=0):
+    """Fade text from its background colour up to full strength."""
+    target = original_text_colors.get(label, label.cget("text_color"))
+    start = _to_rgb(label, bg_color)
+    end = _to_rgb(label, target)
+ 
+    def run():
+        _animate(
+            duration,
+            lambda p: label.configure(
+                text_color=_to_hex(
+                    start[0] + (end[0] - start[0]) * p,
+                    start[1] + (end[1] - start[1]) * p,
+                    start[2] + (end[2] - start[2]) * p,
+                )
+            ),
+            on_done=lambda: label.configure(text_color=target),
+        )
+ 
+    _schedule(delay, run)
+ 
+ 
+WHEEL_NOTCH_UNITS = 4  # how many scroll units one full wheel notch moves
+ 
+ 
+def bind_scroll(scrollable):
+    """Make the mouse wheel scroll the frame reliably across Tk versions.
+ 
+    CustomTkinter 5.2.2 ships a wheel handler written for Tk 8.x deltas. Under
+    Tk 9.0 the <MouseWheel> delta switched to Windows-style units of 120, so the
+    built-in handler scrolls ~120 units per notch and the view jumps to the end.
+    We remove that handler and install one that normalises the delta and also
+    handles trackpads (small sub-120 deltas) and X11 (Button-4/5).
+    """
+    canvas = scrollable._parent_canvas
+ 
+    # Drop CTk's app-wide handler that mis-scales the delta under Tk 9.
+    scrollable.unbind_all("<MouseWheel>")
+    scrollable.unbind_all("<Shift-MouseWheel>")
+ 
+    def on_wheel(event):
+        if canvas.yview() == (0.0, 1.0):  # nothing to scroll
+            return
+        delta = event.delta
+        if abs(delta) >= 120:  # mouse wheel notch (Tk 9 / Windows)
+            steps = -int(delta / 120) * WHEEL_NOTCH_UNITS
+        elif delta != 0:  # trackpad / high-resolution scrolling
+            steps = -1 if delta > 0 else 1
+        else:
+            return
+        canvas.yview_scroll(steps, "units")
+ 
+    scrollable.bind_all("<MouseWheel>", on_wheel, add="+")
+    scrollable.bind_all("<Button-4>", lambda e: canvas.yview_scroll(-WHEEL_NOTCH_UNITS, "units"), add="+")
+    scrollable.bind_all("<Button-5>", lambda e: canvas.yview_scroll(WHEEL_NOTCH_UNITS, "units"), add="+")
+ 
+ 
+def calculate_user_data(user_data):
+    answers = user_data["answers"]
+    meat_type = answers["meat_type"]
+    meat_factor = meat_factors[meat_type]
+ 
+    flight_score = round(answers["flight_hours_year"] * 90)
+ 
+    diet_score = round(
+        600
+        + answers["meat_times_2_weeks"] * 26 * meat_factor
+        + answers["dairy_times_2_weeks"] * 26 * 0.8
+        + answers["expired_food_times_week"] * 52 * 1.9
+    )
+ 
+    waste_score = answers["trash_bags_50l_week"] * 52 * 3
+    waste_score = waste_score - answers["recycling_times_week"] * 20
+    if waste_score < 0:
+        waste_score = 0
+    waste_score = round(waste_score)
+ 
+    appliance_score = answers["large_appliances"] * 250 * 0.288
+    standby_score = answers["standby_devices"] * 1 * 24 * 365 / 1000 * 0.288
+    appliance_score = round(appliance_score + standby_score)
+ 
+    clothing_score = answers["textile_pieces_year"] * answers["clothing_factor"]
+    electronics_score = answers["electronics_year"] * 80
+    device_score = answers["device_hours_day"] * 365 * 0.035
+    textiles_score = round(clothing_score + electronics_score + device_score)
+ 
+    user_scores = [
+        flight_score,
+        diet_score,
+        waste_score,
+        appliance_score,
+        textiles_score,
+    ]
+ 
+    relative_differences = []
+    for i in range(5):
+        difference = (user_scores[i] - community_averages[i]) / community_averages[i]
+        relative_differences.append(difference)
+ 
+    weakest_index = relative_differences.index(max(relative_differences))
+    strongest_index = relative_differences.index(min(relative_differences))
+ 
+    total_emissions = sum(user_scores)
+    average_total = sum(community_averages)
+    eco_score = round(100 * average_total / max(total_emissions, 1))
+    if eco_score > 100:
+        eco_score = 100
+ 
+    score_dictionary = {}
+    average_dictionary = {}
+    difference_dictionary = {}
+    for i in range(5):
+        score_dictionary[domain_keys[i]] = user_scores[i]
+        average_dictionary[domain_keys[i]] = community_averages[i]
+        difference_dictionary[domain_keys[i]] = relative_differences[i]
+ 
+    return {
+        "user_name": user_data["user_name"],
+        "UserScores": user_scores,
+        "Domain": domain_names,
+        "user_scores": score_dictionary,
+        "community_averages": average_dictionary,
+        "relative_differences": difference_dictionary,
+        "strongest_domain": domain_keys[strongest_index],
+        "weakest_domain": domain_keys[weakest_index],
+        "strongest_feedback": feedback[strongest_index][0],
+        "weakest_feedback": feedback[weakest_index][1],
+        "total_emissions": total_emissions,
+        "eco_score": eco_score,
+        "answers": answers,
+    }
+ 
+ 
+def collect_user_data():
+    user_name = name_entry.get().strip()
+    if user_name == "":
+        raise ValueError("Please enter your name.")
+ 
+    answers = {}
+    answers["meat_type"] = meat_options[meat_menu.get()]
+    answers["clothing_factor"] = clothing_options[clothing_menu.get()]
+ 
+    for key in entries:
+        value = entries[key].get().strip()
+        if value == "":
+            raise ValueError('Please answer: "' + question_text[key] + '"')
+        if value.isdigit() == False:
+            raise ValueError('This answer needs a whole number: "' + question_text[key] + '"')
+        answers[key] = int(value)
+ 
+    return {
+        "user_name": user_name,
+        "answers": answers,
+    }
+ 
+ 
+def show_result(result):
+    strongest = result["strongest_domain"]
+    weakest = result["weakest_domain"]
+ 
+    cancel_animations()
+ 
+    # Headline numbers count up with an ease-out curve.
+    count_up(score_label, "Eco-Score\n", result["eco_score"], " / 100\n")
+    count_up(
+        total_label, "Total footprint\n", result["total_emissions"], " kg CO2e/year"
+    )
+    completion_time= datetime.datetime.now().strftime('%d/%m/%Y %H:%M')
+
+    date_label.configure(
+    text=f"Survey time of completion: {(completion_time)}"
+    )
+    survey_history.append(completion_time)
+
+    history_text = "Survey history:\n"
+
+    for i, time in enumerate(survey_history, start=1):
+        history_text += f"{i}. {time}\n"
+
+    history_label.configure(text=history_text)
+    
+
+
+    lines = ["DOMAIN                         YOU       AVERAGE       DIFFERENCE"]
+    for i in range(5):
+        key = domain_keys[i]
+        name = domain_names[i]
+        user_score = result["user_scores"][key]
+        average = result["community_averages"][key]
+        difference = result["relative_differences"][key] * 100
+        line = f"{name[:25]:25} {user_score:>7} {average:>11} {difference:>+12.1f}%"
+        lines.append(line)
+ 
+    comparison_label.configure(text="\n".join(lines))
+ 
+    strongest_label.configure(
+        text=(
+            "STRONGEST DOMAIN OUT OF 5:\n"
+            + domain_names[domain_keys.index(strongest)]
+            + "\n\n"
+            + result["strongest_feedback"]
+        )
+    )
+ 
+    weakest_label.configure(
+        text=(
+            "WEAKEST DOMAIN OUT OF 5:\n"
+            + domain_names[domain_keys.index(weakest)]
+            + "\n\n"
+            + result["weakest_feedback"]
+        )
+    )
+ 
+    # Staggered fade-in so the eye follows the reveal in order.
+    fade_in(comparison_label, results.cget("fg_color"), delay=60)
+    fade_in(strongest_label, strongest_label.cget("fg_color"), delay=160)
+    fade_in(weakest_label, weakest_label.cget("fg_color"), delay=260)
+ 
+ 
+def submit_answers():
+    try:
+        user_data = collect_user_data()
+        result = calculate_user_data(user_data)
+        show_result(result)
+        error_label.configure(text="")
+    except ValueError as error:
+        error_label.configure(text=str(error))
+ 
+ 
+def reset_form():
+    cancel_animations()
+ 
+    name_entry.delete(0, "end")
+    for entry in entries.values():
+        entry.delete(0, "end")
+ 
+    meat_menu.set(list(meat_options.keys())[0])
+    clothing_menu.set(list(clothing_options.keys())[0])
+ 
+    error_label.configure(text="")
+    score_label.configure(text="Eco-Score\n-- / 100")
+    history_label.configure(text="Survey history:\n")
+    total_label.configure(text="Total footprint\n-- kg CO2e/year")
+    comparison_label.configure(text="Your domain comparison will appear here.")
+    strongest_label.configure(text="Strongest domain out of 5\n--")
+    weakest_label.configure(text="Weakest domain out of 5\n--")
+ 
+    # Restore any colours left mid-fade by a cancelled animation.
+    for label, color in original_text_colors.items():
+        label.configure(text_color=color)
+ 
+ 
+def create_gui():
+    global name_entry
+    global meat_menu
+    global clothing_menu
+    global error_label
+    global score_label
+    global total_label
+    global comparison_label
+    global strongest_label
+    global weakest_label
+    global date_label
+    global window
+    global results
+    global history_label
+    
+ 
+    ctk.set_appearance_mode("system")
+    ctk.set_default_color_theme("green")
+ 
+    window = ctk.CTk()
+    window.title("Community Carbon Calculator")
+    window.geometry("920x760")
+    window.minsize(820, 680)
+ 
+    page = ctk.CTkScrollableFrame(window, fg_color="transparent")
+    page.pack(fill="both", expand=True, padx=24, pady=20)
+ 
+    title = ctk.CTkLabel(
+        page,
+        text="Your Annual Carbon Profile",
+        font=ctk.CTkFont(size=28, weight="bold"),
+    )
+    title.pack(anchor="w")
+ 
+    subtitle = ctk.CTkLabel(
+        page,
+        text="Answer using whole numbers. Results are estimates for the class prototype.",
+        text_color=("gray35", "gray70"),
+    )
+    subtitle.pack(anchor="w", pady=(2, 14))
+ 
+    form = ctk.CTkFrame(page)
+    form.pack(fill="x")
+    form.grid_columnconfigure(1, weight=1)
+ 
+    ctk.CTkLabel(form, text="Name").grid(row=0, column=0, sticky="w", padx=16, pady=10)
+    name_entry = ctk.CTkEntry(form, placeholder_text="Your name")
+    name_entry.grid(row=0, column=1, sticky="ew", padx=16, pady=10)
+ 
+    row = 1
+    for group in question_groups:
+        group_name = group[0]
+        questions = group[1]
+ 
+        ctk.CTkLabel(form, text=group_name, font=ctk.CTkFont(weight="bold")).grid(
+            row=row, column=0, sticky="w", padx=16, pady=(14, 4)
+        )
+        row = row + 1
+ 
+        if group_name == "Diet":
+            ctk.CTkLabel(form, text="What type of meat do you usually eat?").grid(
+                row=row, column=0, sticky="w", padx=16, pady=8
+            )
+            meat_menu = ctk.CTkOptionMenu(form, values=list(meat_options.keys()))
+            meat_menu.grid(row=row, column=1, sticky="ew", padx=16, pady=8)
+            row = row + 1
+ 
+        if group_name == "Textiles & computers":
+            ctk.CTkLabel(form, text="What type of clothes do you usually buy?").grid(
+                row=row, column=0, sticky="w", padx=16, pady=8
+            )
+            clothing_menu = ctk.CTkOptionMenu(form, values=list(clothing_options.keys()))
+            clothing_menu.grid(row=row, column=1, sticky="ew", padx=16, pady=8)
+            row = row + 1
+ 
+        for question in questions:
+            key = question[0]
+            text = question[1]
+            question_text[key] = text
+ 
+            ctk.CTkLabel(form, text=text, wraplength=430, justify="left").grid(
+                row=row, column=0, sticky="w", padx=16, pady=8
+            )
+            entry = ctk.CTkEntry(form, placeholder_text="Enter 0 or more")
+            entry.grid(row=row, column=1, sticky="ew", padx=16, pady=8)
+            entries[key] = entry
+            row = row + 1
+ 
+    button = ctk.CTkButton(
+        form,
+        text="Calculate profile",
+        height=42,
+        command=submit_answers,
+    )
+    button.grid(row=row, column=0, sticky="ew", padx=(16, 8), pady=16)
+ 
+    reset_button = ctk.CTkButton(
+        form,
+        text="Reset",
+        height=42,
+        fg_color="transparent",
+        border_width=2,
+        text_color=("gray20", "gray85"),
+        command=reset_form,
+    )
+    reset_button.grid(row=row, column=1, sticky="ew", padx=(8, 16), pady=16)
+    row = row + 1
+ 
+    error_label = ctk.CTkLabel(form, text="", text_color="#d84a4a")
+    error_label.grid(row=row, column=0, columnspan=2, pady=(0, 10))
+ 
+    results = ctk.CTkFrame(page)
+    results.pack(fill="x", pady=(18, 0))
+    results.grid_columnconfigure((0, 1), weight=1)
+ 
+    score_label = ctk.CTkLabel(
+        results,
+        text="Eco-Score\n-- / 100\n ",
+        font=ctk.CTkFont(size=24, weight="bold"),
+    )
+    score_label.grid(row=0, column=0, padx=16, pady=16)
+    
+    date_label = ctk.CTkLabel(
+    results,
+    text="",
+    font=ctk.CTkFont(size=14))
+    date_label.grid(row=1, column=0, padx=16, pady=(0, 16))
+    history_label = ctk.CTkLabel(
+    results,
+    text="Survey history:\n",
+    justify="left",
+    anchor="w",
+    font=ctk.CTkFont(size=14)
+)
+    history_label.grid(
+    row=2, column=0, padx=16, pady=(0, 16), sticky="w"
+)
+
+  
+    total_label = ctk.CTkLabel(
+        results,
+        text="Total footprint\n-- kg CO2e/year",
+        font=ctk.CTkFont(size=18, weight="bold"),
+    )
+    total_label.grid(row=0, column=1, padx=16, pady=16)
+ 
+    comparison_label = ctk.CTkLabel(
+        results,
+        text="Your domain comparison will appear here.",
+        justify="left",
+        anchor="w",
+        font=ctk.CTkFont(family="Consolas", size=13),
+    )
+    comparison_label.grid(row=3, column=0, columnspan=2, sticky="ew", padx=20, pady=12)
+ 
+    strongest_label = ctk.CTkLabel(
+        results,
+        text="Strongest domain out of 5\n--",
+        justify="left",
+        anchor="w",
+        fg_color=("#d8f3dc", "#1f5132"),
+        corner_radius=10,
+        wraplength=380,
+    )
+    strongest_label.grid(
+        row=4, column=0, sticky="nsew", padx=(16, 8), pady=16, ipadx=12, ipady=12
+    )
+ 
+    weakest_label = ctk.CTkLabel(
+        results,
+        text="Weakest domain out of 5\n--",
+        justify="left",
+        anchor="w",
+        fg_color=("#ffe5b4", "#69451c"),
+        corner_radius=10,
+        wraplength=380,
+    )
+    weakest_label.grid(
+        row=4, column=1, sticky="nsew", padx=(8, 16), pady=16, ipadx=12, ipady=12
+    )
+ 
+    # Remember the resting text colours so fade-ins have a fixed target.
+    for label in (comparison_label, strongest_label, weakest_label):
+        original_text_colors[label] = label.cget("text_color")
+ 
+    # Make the wheel scroll everywhere, including over the input widgets.
+    window.update_idletasks()
+    bind_scroll(page)
+ 
+    window.mainloop()
+ 
+ 
+def launch_gui():
+    create_gui()
+ 
+ 
+if __name__ == "__main__":
+    create_gui()
+ 
