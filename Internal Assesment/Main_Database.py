@@ -1,5 +1,6 @@
 import sqlite3
 import datetime as datetime 
+import customtkinter as ctk
 sqlitedata = sqlite3.connect(
         "Project_database.db"
 )
@@ -123,6 +124,8 @@ def Update_Income( category, Amount, Source):
     sqlitedata.commit()
     sqlitedata.close()
 
+
+
 while True:
 
     print("\n Budget Tracker")
@@ -195,3 +198,96 @@ while True:
     elif choice == "7":
         print("Exiting the program.")
     break
+
+def Gui():
+    root = ctk.CTk()
+    
+    
+    def add_expense_window():
+        window = ctk.CTkToplevel(root)
+        window.title("Add Expense ")
+        window.geometry("400x400")
+        category = ctk.CTkEntry(window, placeholder_text="Category")
+        category.pack(pady=10)
+        amount = ctk.CTkEntry(window, placeholder_text="Amount")
+        amount.pack(pady=10)
+        item = ctk.CTkEntry(window, placeholder_text="Item")
+        item.pack(pady=10)
+        add_button = ctk.CTkButton(window, text="Add", command=Expenses(category.get(), amount.get(), item.get()))
+        add_button.pack(pady=10)
+
+    ctk.set_appearance_mode("system")
+    ctk.set_default_color_theme("green")
+
+    
+    root.title("\nBudget Tracker")
+    root.geometry('920x720')
+
+    title = ctk.CTkLabel(root, text="", font=("Arial", 24))
+    title.pack(pady=30)
+
+    title = ctk.CTkLabel(
+        root,
+        text="Budget Tracker",
+        font=("Arial", 32, "bold")
+    )
+    title.pack(pady=40)
+
+    # Buttons
+    add_expense_button = ctk.CTkButton(
+        root,
+        text="Add Expense",
+        width=250,
+        height=50,
+        command=add_expense_window
+        
+    )
+    add_expense_button.pack(pady=10)
+
+    add_income_button = ctk.CTkButton(
+        root,
+        text="Add Income",
+        width=250,
+        height=50,
+        command=Income
+    )
+    add_income_button.pack(pady=10)
+
+    view_expenses_button = ctk.CTkButton(
+        root,
+        text="View Expenses",
+        width=250,
+        height=50,
+        
+    )
+    view_expenses_button.pack(pady=10)
+
+    view_income_button = ctk.CTkButton(
+        root,
+        text="View Income",
+        width=250,
+        height=50,
+        command=View_Income
+    )
+    view_income_button.pack(pady=10)
+
+    delete_button = ctk.CTkButton(
+        root,
+        text="Delete Expense",
+        width=250,
+        height=50,
+        command=Delete_Expenses
+    )
+    delete_button.pack(pady=10)
+
+    delete_button = ctk.CTkButton(
+        root,
+        text="Delete Income",
+        width=250,
+        height=50,
+        command=Delete_Income
+    )
+    delete_button.pack(pady=10)
+
+    root.mainloop()
+Gui()̦

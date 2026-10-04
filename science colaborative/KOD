@@ -140,7 +140,7 @@ weakest_label = None
 window = None
 results = None
 date_label= None
-survey_history = []
+survey_history = [] #this is the dates list i added - Chris 
 # --- Animation engine -------------------------------------------------------
 # Following Emil Kowalski's motion principles: entrances ease out, durations are
 # short and snappy, related elements are revealed with a small stagger, and the
@@ -381,6 +381,10 @@ def show_result(result):
     count_up(
         total_label, "Total footprint\n", result["total_emissions"], " kg CO2e/year"
     )
+
+    #Records each completed survey and displays the
+#          previous survey completion times.
+
     completion_time= datetime.datetime.now().strftime('%d/%m/%Y %H:%M')
 
     date_label.configure(
@@ -587,12 +591,14 @@ def create_gui():
         font=ctk.CTkFont(size=24, weight="bold"),
     )
     score_label.grid(row=0, column=0, padx=16, pady=16)
-    
+    #Shows when the survey was completed 
     date_label = ctk.CTkLabel(
     results,
     text="",
     font=ctk.CTkFont(size=14))
     date_label.grid(row=1, column=0, padx=16, pady=(0, 16))
+    
+    #THis is for the previous lables 
     history_label = ctk.CTkLabel(
     results,
     text="Survey history:\n",
