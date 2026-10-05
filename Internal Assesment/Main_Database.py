@@ -27,10 +27,7 @@ CREATE TABLE IF NOT EXISTS Income (
         date DATE
         )
     """)
-    tables = sqlitedata.execute("""
-    SELECT name FROM sqlite_master
-    WHERE type='table'
-    """)
+    
 create_tables()
 
 
@@ -121,80 +118,6 @@ def Update_Income( Amount, Source, income_id):
     sqlitedata.commit()
     sqlitedata.close()
 
-
-
-# while True:
-
-#     print("\n Budget Tracker")
-#     print("1. Add Expense")
-#     print("2. Add Income")
-#     print("3. View Expenses")
-#     print("4. View Income")
-#     print("5. Delete Expense")
-#     print("6. Delete Income")
-#     print("7. Exit")
-
-#     choice = input("Enter your choice: ")
-
-#     if choice == "1":
-#         category = input("Enter expense category: ")
-#         try:
-#             Amount = float(input("Enter expense amount: "))
-#         except ValueError:
-#             print("Invalid input. Please enter a valid number for the amount.")
-#             continue
-#         Item = input("Enter expense item: ")
-#         Expenses(category, Amount, Item)
-#         print("Expense added successfully.")
-#         continue
-
-#     elif choice == "2":
-#         try:
-#             Amount = float(input("Enter income amount: "))
-#         except ValueError:
-#             print("Invalid input. Please enter a valid number for the amount.")
-#             continue
-#         if Amount <= 0:
-#             print("Income amount must be greater than zero, or be a number at all.")
-#         Source = input("Enter income source: ")
-#         Income(Amount, Source)
-#         print("Income added successfully.")
-#         continue
-#     elif choice == "3":
-#         expenses = View_Expenses()
-#         if expenses:
-#             print("\nExpenses:")
-#             for expense in expenses:
-#                 print(f"ID: {expense[0]}, Category: {expense[1]}, Amount: {expense[2]}, Item: {expense[3]}, Date: {expense[4]}")
-#             continue
-#         else:
-#             print("No expenses found.")
-#         continue
-    
-#     elif choice == "4":
-#         income = View_Income()
-#         if income:
-#             print("\nIncome:")
-#             for inc in income:
-#                 print(f"ID: {inc[1]}, Amount: {inc[2]}, Source: {inc[3]}, Date: {inc[4]}")
-#                 continue
-#         else:
-#             print("No income found.")
-#         continue        
-    
-#     elif choice == "5":
-#         expense_id = input("Enter the expense ID to delete: ")
-#         Delete_Expenses(expense_id)
-#         continue
-    
-#     elif choice == "6":
-#         income_id = input("Enter the income ID to delete: ")
-#         Delete_Income(income_id)
-#         continue
-    
-#     elif choice == "7":
-#         print("Exiting the program.")
-#     break
 
 def Gui():
     root = ctk.CTk()
@@ -322,6 +245,8 @@ def Gui():
         result_frame.pack(pady=2)
         def delete_income():
             income_found = Delete_Income(income_id.get())
+            for widget in result_frame.winfo_children():
+                widget.destroy()
             if income_found == True:
                 ctk.CTkLabel(result_frame, text=f"Income ID {income_id.get()} deleted successfully.").pack(pady=5)
             else:
@@ -342,11 +267,15 @@ def Gui():
         amount.pack(pady=10)
         item =  ctk.CTkEntry(window,width= 300, placeholder_text="New item")
         item.pack(pady=10)
+        result_frame = ctk.CTkFrame(window)
+        result_frame.pack(pady=10)
         def update_expense():
-            if previous_id.get() and category.get() and int(amount.get()) and item.get():
+            for widget in result_frame.winfo_children():
+                widget.destroy()
+            if previous_id.get() and category.get() and float(amount.get()) and item.get():
                 Update_Expenses(category.get(), amount.get(), item.get(), previous_id.get())
             else:
-                ctk.CTkLabel(window, text="Please fill in all fields correctly.").pack(pady=5)
+                ctk.CTkLabel(result_frame, text="Please fill in all fields correctly.").pack(pady=5)
         update_expense_button = ctk.CTkButton(window, text="Update", command=update_expense)
         update_expense_button.pack(pady=10)
     
@@ -360,11 +289,15 @@ def Gui():
         source.pack(pady=10)
         amount = ctk.CTkEntry(window,width= 300, placeholder_text="New amount")
         amount.pack(pady=10)
+        result_frame = ctk.CTkFrame(window)
+        result_frame.pack(pady=10)
         def update_income():
-            if previous_id.get() and source.get() and int(amount.get()):
+            for widget in result_frame.winfo_children():
+                widget.destroy()
+            if previous_id.get() and source.get() and float(amount.get()):
                 Update_Income(amount.get(), source.get(), previous_id.get())
             else:
-                ctk.CTkLabel(window, text="Please fill in all fields correctly.").pack(pady=5)
+                ctk.CTkLabel(result_frame, text="Please fill in all fields correctly.").pack(pady=5)
 
         update_income_button = ctk.CTkButton(window, text="Update", command=update_income)
         update_income_button.pack(pady=10)
@@ -386,7 +319,7 @@ def Gui():
     )
     title.pack(pady=40)
 
-    # Button implementation
+    
     add_expense_button = ctk.CTkButton(
         root,
         text="Add Expense",
