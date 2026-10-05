@@ -35,20 +35,15 @@ create_tables()
 
 
 def Expenses(category,Amount,Item):
-    print("connecting to the database")
     date = datetime.datetime.now().strftime('%d/%m/%Y')
     sqlitedata = sqlite3.connect("Project_database.db")
-    print("connected to the database")
-    print("inserting expense record")
     sqlitedata.execute("""\
         INSERT INTO Expenses(category,Amount,Item,date)
         VALUES(?,?,?,?)""",
         (category,Amount,Item,date))
-    print("expense record inserted")
-    print("closing database connection")
     sqlitedata.commit()
     sqlitedata.close()
-    print("database connection closed")
+    
 
 def Income(Amount,Source):
     date = datetime.datetime.now().strftime('%d/%m/%Y')
@@ -215,8 +210,26 @@ def Gui():
         amount.pack(pady=10)
         item = ctk.CTkEntry(window, placeholder_text="Item")
         item.pack(pady=10)
+        result_frame = ctk.CTkFrame(window)
+        result_frame.pack(pady=10)
         def add_button():
-            Expenses(category.get(), amount.get(), item.get())
+            
+            try:
+                for widget in result_frame.winfo_children():
+                    widget.destroy()
+                
+                category_text = category.get()
+                amount_text = float(amount.get())
+                item_text = item.get()
+                if category_text == "" or item_text == "" or amount_text == "" or amount_text <= 0 :
+                    raise ValueError
+
+
+                Expenses(category_text, float(amount_text), str(item_text))
+                ctk.CTkLabel(result_frame, text="Expense added successfully.").pack(pady=5)
+            except ValueError:
+                ctk.CTkLabel(result_frame, text="Please enter a valid number for the amount and fill in all fields.").pack(pady=5)
+        
         add_expense_button = ctk.CTkButton(window, text="Add", command=add_button)
         add_expense_button.pack(pady=10)
 
@@ -228,8 +241,22 @@ def Gui():
         amount.pack(pady=10)
         source = ctk.CTkEntry(window, placeholder_text="Source")
         source.pack(pady=10)
+        result_frame = ctk.CTkFrame(window)
+        result_frame.pack(pady=10)
         def add_button():
-            Income(amount.get(), source.get())
+            try:
+                for widget in result_frame.winfo_children():
+                    widget.destroy()
+                amount_ = float(amount.get())
+                source_text = source.get()
+                if amount_ == "" or amount_ <= 0 or source_text == "":
+                    raise ValueError
+                
+                Income(int(amount_), str(source_text))
+                ctk.CTkLabel(result_frame, text="Income added successfully.").pack(pady=5)
+            except ValueError:
+                ctk.CTkLabel(result_frame, text="Please enter a valid number for the amount and fill in all fields.").pack(pady=5)
+
         add_income_button = ctk.CTkButton(window, text="Add", command=add_button)
         add_income_button.pack(pady=10)
 
@@ -238,7 +265,7 @@ def Gui():
         window.title("View Expenses")
         window.geometry("400x400")
         expenses = ctk.CTkEntry(window, placeholder_text="enter expense category (if want to se all type 'all')")
-        expenses.pack(pady=10)
+        expenses.pack(pady=10,padx=10)
         result_frame = ctk.CTkFrame(window)
         result_frame.pack(pady=10)
         def view_button():
@@ -258,7 +285,7 @@ def Gui():
     def view_income_window():
         window = ctk.CTkToplevel(root)
         window.title("View Income")
-        window.geometry("400x400")
+        window.geometry("500x500")
         income = View_Income()
         if income:
             for inc in income:
@@ -316,12 +343,13 @@ def Gui():
         item =  ctk.CTkEntry(window,width= 300, placeholder_text="New item")
         item.pack(pady=10)
         def update_expense():
-            if previous_id.get() and category.get() and amount.get() and item.get():
+            if previous_id.get() and category.get() and int(amount.get()) and item.get():
                 Update_Expenses(category.get(), amount.get(), item.get(), previous_id.get())
             else:
-                ctk.CTkLabel(window, text="Please fill in all fields.").pack(pady=5)
+                ctk.CTkLabel(window, text="Please fill in all fields correctly.").pack(pady=5)
         update_expense_button = ctk.CTkButton(window, text="Update", command=update_expense)
         update_expense_button.pack(pady=10)
+    
     def update_income_window():
         window = ctk.CTkToplevel(root)
         window.title("Update Income")
@@ -333,10 +361,10 @@ def Gui():
         amount = ctk.CTkEntry(window,width= 300, placeholder_text="New amount")
         amount.pack(pady=10)
         def update_income():
-            if previous_id.get() and source.get() and amount.get():
+            if previous_id.get() and source.get() and int(amount.get()):
                 Update_Income(amount.get(), source.get(), previous_id.get())
             else:
-                ctk.CTkLabel(window, text="Please fill in all fields.").pack(pady=5)
+                ctk.CTkLabel(window, text="Please fill in all fields correctly.").pack(pady=5)
 
         update_income_button = ctk.CTkButton(window, text="Update", command=update_income)
         update_income_button.pack(pady=10)
