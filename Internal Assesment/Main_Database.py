@@ -4,10 +4,10 @@ import customtkinter as ctk
 sqlitedata = sqlite3.connect(
         "Project_database.db"
 )
-def create_tables():   
-    with sqlite3.connect("Project_database.db") as sqlitedata:
+def create_tables():    
+    with sqlite3.connect("Project_database.db") as sqlitedata: #connecting to the database and changing conection name
         sqlitedata.execute(""" \
-    CREATE TABLE IF NOT EXISTS Expenses (
+    CREATE TABLE IF NOT EXISTS Expenses (  
         expense_id INTEGER PRIMARY KEY, 
         category STR,
         Amount REAL,
@@ -19,7 +19,7 @@ def create_tables():
         """)
 
     sqlitedata.execute("""\
-CREATE TABLE IF NOT EXISTS Income (
+CREATE TABLE IF NOT EXISTS Income (      
         income_id INTEGER PRIMARY KEY,
         category STR,
         Amount REAL,
@@ -32,7 +32,7 @@ create_tables()
 
 
 def Expenses(category,Amount,Item):
-    date = datetime.datetime.now().strftime('%d/%m/%Y')
+    date = datetime.datetime.now().strftime('%d/%m/%Y') 
     sqlitedata = sqlite3.connect("Project_database.db")
     sqlitedata.execute("""\
         INSERT INTO Expenses(category,Amount,Item,date)
@@ -77,7 +77,7 @@ def Delete_Expenses(expense_id):
     cursor = sqlitedata.cursor()
     cursor.execute("DELETE FROM Expenses WHERE expense_id = ?", (expense_id,))
     sqlitedata.commit()
-    if cursor.rowcount == 1:
+    if cursor.rowcount == 1: #later used in gui to check if the id was found or not
         result = True
     else:
         result = False
@@ -90,7 +90,7 @@ def Delete_Income(income_id):
     cursor = sqlitedata.cursor()
     cursor.execute("DELETE FROM Income WHERE income_id = ?", (income_id,))
     sqlitedata.commit()
-    if cursor.rowcount == 0:
+    if cursor.rowcount == 0: #later used in gui to check if the id was found or not
         result = False
     else:
         result = True
@@ -139,18 +139,18 @@ def Gui():
             
             try:
                 for widget in result_frame.winfo_children():
-                    widget.destroy()
+                    widget.destroy() # destroying previous result labels
                 
                 category_text = category.get()
                 amount_text = float(amount.get())
                 item_text = item.get()
                 if category_text == "" or item_text == "" or amount_text == "" or amount_text <= 0 :
-                    raise ValueError
+                    raise ValueError #raise error if any field is empty or amount is less than or equal to 0
 
 
                 Expenses(category_text, float(amount_text), str(item_text))
                 ctk.CTkLabel(result_frame, text="Expense added successfully.").pack(pady=5)
-            except ValueError:
+            except ValueError: 
                 ctk.CTkLabel(result_frame, text="Please enter a valid number for the amount and fill in all fields.").pack(pady=5)
         
         add_expense_button = ctk.CTkButton(window, text="Add", command=add_button)
